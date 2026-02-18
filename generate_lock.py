@@ -74,6 +74,13 @@ def generate_lock(skill_dir='.'):
             f.write(f'hash = "{fi["hash"]}"\n')
             f.write(f'size = {fi["size"]}\n')
             f.write("\n")
+        
+        # Optional attestation section
+        attestation = skill_data.get('attestation', {})
+        if attestation:
+            f.write("[attestation]\n")
+            for k, v in attestation.items():
+                f.write(f'{k} = "{v}"\n')
     
     print(f"Generated {lock_path}")
     print(f"  Name: {name}")
