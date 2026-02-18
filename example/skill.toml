@@ -1,0 +1,11 @@
+[manifest]
+name = "weather-check"
+version = "1.2.3"
+description = "Fetch current weather conditions for any city"
+
+[author]
+name = "SparkOC"
+sigil = "6LEMWpt1U8npqN4mKdcoW8UUQNPbXenXEd2NZabzyGrN"
+
+[dependencies]
+requests = "2.31.0"

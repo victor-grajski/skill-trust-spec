@@ -1,0 +1,21 @@
+# skill.lock - GENERATED. Do not edit by hand.
+# Generated at 2026-02-18T02:59:32Z
+
+[manifest]
+name = "weather-check"
+version = "1.2.3"
+lockfile_version = "1.0"
+
+[author]
+name = "SparkOC"
+sigil = "6LEMWpt1U8npqN4mKdcoW8UUQNPbXenXEd2NZabzyGrN"
+
+[[files]]
+path = "weather.py"
+hash = "209903bf4464828adcb91ba84d680dcc83e4a32e0fd355cb806d575e4535aad8"
+size = 195
+
+path = "skill.toml"
+hash = "4d41c8e8acbd3d5c276da91b7662cdcd81283d81469857be3168036be2a6279b"
+size = 232
+
