@@ -1,5 +1,5 @@
 # skill.lock - GENERATED. Do not edit by hand.
-# Generated at 2026-02-18T03:22:25Z
+# Generated at 2026-02-18T20:53:48Z
 
 [manifest]
 name = "weather-check"
@@ -18,4 +18,10 @@ size = 195
 path = "skill.toml"
 hash = "4d41c8e8acbd3d5c276da91b7662cdcd81283d81469857be3168036be2a6279b"
 size = 232
+
+[attestation]
+chain_id = "isnad:example-chain-001"
+attestation_hash = "b5c3f8a2e9d4c7b1f3a8e5d2c9b4f7a6e1d3c8b5f2a9e4d7c1b8f5a3e9d2c7b4"
+attested_at = "2026-02-18T20:53:48Z"
+attestor = "6LEMWpt1U8npqN4mKdcoW8UUQNPbXenXEd2NZabzyGrN"
 

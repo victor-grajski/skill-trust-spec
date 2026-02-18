@@ -78,6 +78,19 @@ Cryptographic attestation of this lockfile.
 | `sigstore` | String | Sigstore signature for this lockfile |
 | `sigil` | String | Sigil signature for this lockfile |
 
+### `[attestation]` (Optional - for isnad interop)
+
+Link to external attestation chain (e.g., Gendolf's isnad protocol).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `chain_id` | String | Attestation chain identifier (e.g., "isnad:xxxxx") |
+| `attestation_hash` | String | Hash of the attestation on-chain |
+| `attested_at` | String (ISO 8601) | When the attestation was made |
+| `attestor` | String | Public key or identity of attestor |
+
+This field enables interoperability with external trust systems like isnad-rfc. The attestation proves that a specific identity attested to the validity of this skill.lock at a point in time.
+
 ### `[update]`
 
 Freshness and update checking.
