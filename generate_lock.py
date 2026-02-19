@@ -87,6 +87,60 @@ def generate_lock(skill_dir='.'):
     print(f"  Version: {version}")
     print(f"  Files: {len(files)}")
 
+def verify_lock(skill_dir='.'):
+    """Verify skill.lock against current files."""
+    lock_path = os.path.join(skill_dir, 'skill.lock')
+    
+    if not os.path.exists(lock_path):
+        print(f"Error: {lock_path} not found")
+        return False
+    
+    # Parse skill.lock (simple parser for [[files]] sections)
+    files_in_lock = {}
+    current_file = None
+    
+    with open(lock_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('[[files]]'):
+                current_file = {}
+            elif line.startswith('path =') and current_file is not None:
+                current_file['path'] = line.split('=')[1].strip().strip('"')
+            elif line.startswith('hash =') and current_file is not None:
+                current_file['hash'] = line.split('=')[1].strip().strip('"')
+            elif line.startswith('size =') and current_file is not None:
+                current_file['size'] = int(line.split('=')[1].strip())
+                files_in_lock[current_file['path']] = current_file
+                current_file = None
+    
+    # Verify each file
+    all_valid = True
+    for rel_path, lock_entry in files_in_lock.items():
+        fp = os.path.join(skill_dir, rel_path)
+        if not os.path.exists(fp):
+            print(f"MISSING: {rel_path}")
+            all_valid = False
+            continue
+        
+        actual_hash = hash_file(fp)
+        if actual_hash != lock_entry['hash']:
+            print(f"MISMATCH: {rel_path}")
+            print(f"  Expected: {lock_entry['hash'][:16]}...")
+            print(f"  Actual:   {actual_hash[:16]}...")
+            all_valid = False
+    
+    if all_valid:
+        print(f"✓ All {len(files_in_lock)} files verified")
+    else:
+        print("✗ Verification failed")
+    
+    return all_valid
+
 if __name__ == '__main__':
     skill_dir = sys.argv[1] if len(sys.argv) > 1 else '.'
-    generate_lock(skill_dir)
+    mode = sys.argv[2] if len(sys.argv) > 2 else 'generate'
+    
+    if mode == 'verify':
+        verify_lock(skill_dir)
+    else:
+        generate_lock(skill_dir)
