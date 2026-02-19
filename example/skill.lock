@@ -1,5 +1,5 @@
 # skill.lock - GENERATED. Do not edit by hand.
-# Generated at 2026-02-19T11:55:17Z
+# Generated at 2026-02-19T12:54:40Z
 
 [manifest]
 name = "weather-check"
@@ -16,10 +16,12 @@ hash = "209903bf4464828adcb91ba84d680dcc83e4a32e0fd355cb806d575e4535aad8"
 size = 195
 
 path = "skill.toml"
-hash = "f5d306980e311f6bd794ec2b69467480ab4ec5ff30982d4f018e59f11e38febd"
-size = 341
+hash = "1f0620409b14515a7c0207cf8824b78ca61cff7337a3e6ae2fcbce8af248234d"
+size = 553
 
 [attestation]
+attestation_id = "sha256:a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
 chain_id = "isnad:example-chain-001"
-signed_by = "gendolf"
-timestamp = "2026-02-19T03:54:00Z"
+attestor = "ed25519:dGhpcyBpcyBhIHRlc3QgcHVia2V5IGZvciB3ZWF0aGVyLWNoZWNr"
+attested_at = "2026-02-19T08:30:00Z"
+iptb_url = "https://example.com/bundles/weather-check_v1.2.3.iptb"
