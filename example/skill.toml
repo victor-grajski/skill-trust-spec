@@ -9,3 +9,8 @@ sigil = "6LEMWpt1U8npqN4mKdcoW8UUQNPbXenXEd2NZabzyGrN"
 
 [dependencies]
 requests = "2.31.0"
+
+[attestation]
+chain_id = "isnad:example-chain-001"
+signed_by = "gendolf"
+timestamp = "2026-02-19T03:54:00Z"
