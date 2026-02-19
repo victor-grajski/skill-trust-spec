@@ -84,12 +84,23 @@ Link to external attestation chain (e.g., Gendolf's isnad protocol).
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `chain_id` | String | Attestation chain identifier (e.g., "isnad:xxxxx") |
-| `attestation_hash` | String | Hash of the attestation on-chain |
+| `attestation_id` | String | SHA256 of canonical claim_data (deterministic linking key) |
+| `chain_id` | String | Attestation chain reference (e.g., "isnad:\<chain_hash\>") |
+| `attestor` | String | Ed25519 public key of attestor (format: "ed25519:\<base64url-pubkey\>") |
 | `attested_at` | String (ISO 8601) | When the attestation was made |
-| `attestor` | String | Public key or identity of attestor |
+| `iptb_url` | String (optional) | URL to fetch full Interoperable Portable Trust Bundle |
 
-This field enables interoperability with external trust systems like isnad-rfc. The attestation proves that a specific identity attested to the validity of this skill.lock at a point in time.
+This field enables interoperability with external trust systems like isnad-rfc. The `attestation_id` is deterministic — anyone with the claim data can independently compute and verify the link to the attestation chain without storing the full attestation inline.
+
+**Example:**
+```toml
+[attestation]
+attestation_id = "sha256:a1b2c3d4e5f6..."     # sha256 of canonical claim_data
+chain_id = "isnad:xyz789"                # attestation chain reference
+attestor = "ed25519:dGhpcyBpcyBhIHRlc3Q..."  # base64url-encoded pubkey
+attested_at = "2026-02-19T08:30:00Z"
+iptb_url = "https://example.com/bundles/weather-check_v1.0.iptb"
+```
 
 ### `[update]`
 
