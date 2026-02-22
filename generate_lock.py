@@ -2,13 +2,14 @@
 """
 skill.lock generator.
 Reads skill.toml, hashes all files, outputs skill.lock.
+Supports attestation block per skill.lock.md spec.
 """
 import hashlib
+import json
 import os
 import sys
 from datetime import datetime
 import tomllib
-import configparser
 
 def hash_file(path):
     """SHA256 hash of file contents."""
@@ -17,7 +18,13 @@ def hash_file(path):
         h.update(f.read())
     return h.hexdigest()
 
-def generate_lock(skill_dir='.'):
+def compute_scope_hash(lock_content_without_attestation):
+    """Compute SHA256 of lock content excluding attestation block."""
+    h = hashlib.sha256()
+    h.update(lock_content_without_attestation.encode('utf-8'))
+    return h.hexdigest()
+
+def generate_lock(skill_dir='.', compute_attestation=False):
     """Generate skill.lock from skill.toml."""
     toml_path = os.path.join(skill_dir, 'skill.toml')
     
@@ -50,42 +57,95 @@ def generate_lock(skill_dir='.'):
                 'size': os.path.getsize(fp)
             })
     
-    # Write skill.lock manually (toml-ish format)
+    # Build lock content in memory first (for scope_hash computation)
+    lines = []
+    lines.append("# skill.lock - GENERATED. Do not edit by hand.")
+    lines.append(f"# Generated at {datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}")
+    lines.append("")
+    
+    lines.append("[manifest]")
+    lines.append(f'name = "{name}"')
+    lines.append(f'version = "{version}"')
+    lines.append(f'lockfile_version = "1.0"')
+    lines.append("")
+    
+    author = skill_data.get('author', {})
+    if author:
+        lines.append("[author]")
+        for k, v in author.items():
+            lines.append(f'{k} = "{v}"')
+        lines.append("")
+    
+    lines.append("[[files]]")
+    for fi in files:
+        lines.append(f'path = "{fi["path"]}"')
+        lines.append(f'hash = "{fi["hash"]}"')
+        lines.append(f'size = {fi["size"]}')
+        lines.append("")
+    
+    # Track where attestation section starts (for scope_hash)
+    attestation_start_idx = len(lines)
+    
+    # Optional attestation section - read from skill.toml or compute
+    attestation = skill_data.get('attestation', {})
+    if compute_attestation and attestation:
+        # Compute scope_hash from content BEFORE attestation block
+        content_before_attestation = '\n'.join(lines[:attestation_start_idx])
+        scope_hash = compute_scope_hash(content_before_attestation)
+        
+        lines.append("[attestation]")
+        lines.append(f'issuer_id = "{attestation.get("issuer_id", "")}"')
+        lines.append(f'subject_id = "{attestation.get("subject_id", "")}"')
+        lines.append(f'signature = "{attestation.get("signature", "")}"')
+        lines.append(f'chain_id = "{attestation.get("chain_id", "")}"')
+        lines.append(f'timestamp = "{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}"')
+        lines.append(f'scope_hash = "{scope_hash}"')
+        
+        # Optional metadata
+        metadata = attestation.get('metadata', {})
+        if metadata:
+            lines.append("")
+            lines.append("[attestation.metadata]")
+            for k, v in metadata.items():
+                if isinstance(v, float):
+                    lines.append(f'{k} = {v}')
+                else:
+                    lines.append(f'{k} = "{v}"')
+    elif attestation:
+        # Legacy/flat format - convert to new spec format
+        lines.append("[attestation]")
+        for k, v in attestation.items():
+            if k == 'metadata':
+                continue
+            lines.append(f'{k} = "{v}"')
+        
+        # Compute scope_hash even for legacy
+        content_before_attestation = '\n'.join(lines[:attestation_start_idx])
+        scope_hash = compute_scope_hash(content_before_attestation)
+        lines.append(f'scope_hash = "{scope_hash}"')
+        
+        metadata = attestation.get('metadata', {})
+        if metadata:
+            lines.append("")
+            lines.append("[attestation.metadata]")
+            for k, v in metadata.items():
+                if isinstance(v, float):
+                    lines.append(f'{k} = {v}')
+                else:
+                    lines.append(f'{k} = "{v}"')
+    
+    # Write to file
+    lock_content = '\n'.join(lines)
     lock_path = os.path.join(skill_dir, 'skill.lock')
     with open(lock_path, 'w') as f:
-        f.write("# skill.lock - GENERATED. Do not edit by hand.\n")
-        f.write(f"# Generated at {datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}\n\n")
-        
-        f.write("[manifest]\n")
-        f.write(f'name = "{name}"\n')
-        f.write(f'version = "{version}"\n')
-        f.write(f'lockfile_version = "1.0"\n\n')
-        
-        author = skill_data.get('author', {})
-        if author:
-            f.write("[author]\n")
-            for k, v in author.items():
-                f.write(f'{k} = "{v}"\n')
-            f.write("\n")
-        
-        f.write("[[files]]\n")
-        for fi in files:
-            f.write(f'path = "{fi["path"]}"\n')
-            f.write(f'hash = "{fi["hash"]}"\n')
-            f.write(f'size = {fi["size"]}\n')
-            f.write("\n")
-        
-        # Optional attestation section
-        attestation = skill_data.get('attestation', {})
-        if attestation:
-            f.write("[attestation]\n")
-            for k, v in attestation.items():
-                f.write(f'{k} = "{v}"\n')
+        f.write(lock_content)
     
     print(f"Generated {lock_path}")
     print(f"  Name: {name}")
     print(f"  Version: {version}")
     print(f"  Files: {len(files)}")
+    if compute_attestation and attestation:
+        print(f"  Attestation: included (scope_hash computed)")
 
 def verify_lock(skill_dir='.'):
     """Verify skill.lock against current files."""

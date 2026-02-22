@@ -1,5 +1,5 @@
 # skill.lock - GENERATED. Do not edit by hand.
-# Generated at 2026-02-22T13:54:14Z
+# Generated at 2026-02-22T19:56:08Z
 
 [manifest]
 name = "weather-check"
@@ -16,12 +16,17 @@ hash = "209903bf4464828adcb91ba84d680dcc83e4a32e0fd355cb806d575e4535aad8"
 size = 195
 
 path = "skill.toml"
-hash = "1f0620409b14515a7c0207cf8824b78ca61cff7337a3e6ae2fcbce8af248234d"
-size = 553
+hash = "bb06adf9bc55be249acd71f30c27f17feed4d7458752919cdf18a2dfb11ef017"
+size = 540
 
 [attestation]
-attestation_id = "sha256:a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
-chain_id = "isnad:example-chain-001"
-attestor = "ed25519:dGhpcyBpcyBhIHRlc3QgcHVia2V5IGZvciB3ZWF0aGVyLWNoZWNr"
-attested_at = "2026-02-19T08:30:00Z"
-iptb_url = "https://example.com/bundles/weather-check_v1.2.3.iptb"
+issuer_id = "did:isnad:7Hk2PVLYzQm8NKpLwXqZ..."
+subject_id = "did:isnad:9Xp4RWLZyNk3MLqRsTvw..."
+signature = "base64_ed25519_signature_here"
+chain_id = "isnad-v1:mainnet:a1b2c3d4"
+scope_hash = "7afeb933edfb012fbb631687bda45912893007796342d61e8090f479c5df7133"
+
+[attestation.metadata]
+trust_score = 0.92
+attestation_type = "skill_audit"
+valid_until = "2026-08-22T07:00:00Z"

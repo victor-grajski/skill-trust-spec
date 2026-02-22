@@ -11,8 +11,12 @@ sigil = "6LEMWpt1U8npqN4mKdcoW8UUQNPbXenXEd2NZabzyGrN"
 requests = "2.31.0"
 
 [attestation]
-attestation_id = "sha256:a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
-chain_id = "isnad:example-chain-001"
-attestor = "ed25519:dGhpcyBpcyBhIHRlc3QgcHVia2V5IGZvciB3ZWF0aGVyLWNoZWNr"
-attested_at = "2026-02-19T08:30:00Z"
-iptb_url = "https://example.com/bundles/weather-check_v1.2.3.iptb"
+issuer_id = "did:isnad:7Hk2PVLYzQm8NKpLwXqZ..."
+subject_id = "did:isnad:9Xp4RWLZyNk3MLqRsTvw..."
+signature = "base64_ed25519_signature_here"
+chain_id = "isnad-v1:mainnet:a1b2c3d4"
+
+[attestation.metadata]
+trust_score = 0.92
+attestation_type = "skill_audit"
+valid_until = "2026-08-22T07:00:00Z"
