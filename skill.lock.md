@@ -82,25 +82,46 @@ Cryptographic attestation of this lockfile.
 
 Link to external attestation chain (e.g., Gendolf's isnad protocol).
 
+**Required fields:**
+
 | Field | Type | Description |
 |-------|------|-------------|
-| `attestation_id` | String | SHA256 of canonical claim_data (deterministic linking key) |
-| `chain_id` | String | Attestation chain reference (e.g., "isnad:\<chain_hash\>") |
-| `attestor` | String | Ed25519 public key of attestor (format: "ed25519:\<base64url-pubkey\>") |
-| `attested_at` | String (ISO 8601) | When the attestation was made |
-| `iptb_url` | String (optional) | URL to fetch full Interoperable Portable Trust Bundle |
+| `issuer_id` | String | DID of attestation issuer (e.g., "did:isnad:{base58_ed25519_pubkey}") |
+| `subject_id` | String | DID of the subject being attested (skill author or skill itself) |
+| `signature` | String | Ed25519 signature over scope_hash (base64-encoded) |
+| `chain_id` | String | Attestation chain reference (format: "isnad-v1:{network_id}:{chain_hash}") |
+| `timestamp` | String (ISO 8601) | When the attestation was made |
+| `scope_hash` | String | SHA256 of skill.lock content excluding the [attestation] block |
 
-This field enables interoperability with external trust systems like isnad-rfc. The `attestation_id` is deterministic — anyone with the claim data can independently compute and verify the link to the attestation chain without storing the full attestation inline.
+**Optional `[attestation.metadata]` fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `trust_score` | Float | Trust score (0.0-1.0) from the attestation authority |
+| `attestation_type` | String | Type of attestation (e.g., "skill_audit", "identity_proof") |
+| `valid_until` | String (ISO 8601) | Expiration date of this attestation |
+
+**chain_id format:** `isnad-v1:{network_id}:{chain_hash}`
+- `network_id`: federation network ("mainnet", "testnet", or custom)
+- `chain_hash`: first 8 chars of SHA-256 of the trust chain root attestation
 
 **Example:**
 ```toml
 [attestation]
-attestation_id = "sha256:a1b2c3d4e5f6..."     # sha256 of canonical claim_data
-chain_id = "isnad:xyz789"                # attestation chain reference
-attestor = "ed25519:dGhpcyBpcyBhIHRlc3Q..."  # base64url-encoded pubkey
-attested_at = "2026-02-19T08:30:00Z"
-iptb_url = "https://example.com/bundles/weather-check_v1.0.iptb"
+issuer_id = "did:isnad:7Hk2PVLYzQm8NKpLwXqZ..."
+subject_id = "did:isnad:9Xp4RWLZyNk3MLqRsTvw..."
+signature = "base64_ed25519_signature_here"
+chain_id = "isnad-v1:mainnet:a1b2c3d4"
+timestamp = "2026-02-22T07:00:00Z"
+scope_hash = "sha256:abc123def456..."
+
+[attestation.metadata]
+trust_score = 0.92
+attestation_type = "skill_audit"
+valid_until = "2026-08-22T07:00:00Z"
 ```
+
+This field enables interoperability with external trust systems like isnad-rfc. The `scope_hash` is deterministic — verification recomputes the hash of skill.lock content excluding the [attestation] block, then verifies the Ed25519 signature against it.
 
 ### `[update]`
 
