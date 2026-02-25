@@ -2,14 +2,23 @@
 """
 skill.lock generator.
 Reads skill.toml, hashes all files, outputs skill.lock.
-Supports attestation block per skill.lock.md spec.
+Supports attestation block per skill.lock.md spec with Ed25519 signing.
 """
+import base64
 import hashlib
 import json
 import os
 import sys
 from datetime import datetime
 import tomllib
+
+try:
+    from nacl.encoding import RawEncoder
+    from nacl.signing import SigningKey
+    from nacl.public import PrivateKey
+    NACL_AVAILABLE = True
+except ImportError:
+    NACL_AVAILABLE = False
 
 def hash_file(path):
     """SHA256 hash of file contents."""
@@ -24,7 +33,76 @@ def compute_scope_hash(lock_content_without_attestation):
     h.update(lock_content_without_attestation.encode('utf-8'))
     return h.hexdigest()
 
-def generate_lock(skill_dir='.', compute_attestation=False):
+def generate_keypair():
+    """Generate Ed25519 keypair for signing attestations."""
+    if not NACL_AVAILABLE:
+        print("Error: pynacl not installed. Run: pip install pynacl")
+        sys.exit(1)
+    
+    private_key = SigningKey.generate()
+    public_key = private_key.verify_key
+    
+    # Return as base58-like (base64url without padding)
+    return {
+        'private': base64.urlsafe_b64encode(bytes(private_key)).decode('utf-8').rstrip('='),
+        'public': base64.urlsafe_b64encode(bytes(public_key)).decode('utf-8').rstrip('=')
+    }
+
+def load_or_generate_keypair(key_dir='.'):
+    """Load existing keypair or generate new one."""
+    priv_path = os.path.join(key_dir, '.attestation.key')
+    pub_path = os.path.join(key_dir, '.attestation.pub')
+    
+    if os.path.exists(priv_path) and os.path.exists(pub_path):
+        with open(priv_path, 'r') as f:
+            priv_key = f.read().strip()
+        with open(pub_path, 'r') as f:
+            pub_key = f.read().strip()
+        return {'private': priv_key, 'public': pub_key}
+    else:
+        keys = generate_keypair()
+        # Save keys
+        with open(priv_path, 'w') as f:
+            f.write(keys['private'])
+        os.chmod(priv_path, 0o600)  # Secure permissions
+        with open(pub_path, 'w') as f:
+            f.write(keys['public'])
+        print(f"Generated new Ed25519 keypair in {key_dir}")
+        return keys
+
+def sign_scope_hash(scope_hash, private_key_b64):
+    """Sign the scope_hash with Ed25519 private key."""
+    if not NACL_AVAILABLE:
+        return ""
+    
+    # Decode base64url private key
+    padding = 4 - len(private_key_b64) % 4
+    if padding != 4:
+        private_key_b64 += '=' * padding
+    priv_bytes = base64.urlsafe_b64decode(private_key_b64)
+    
+    signing_key = SigningKey(priv_bytes)
+    signature = signing_key.sign(scope_hash.encode('utf-8'), encoder=RawEncoder)
+    
+    # Return signature as base64url
+    return base64.urlsafe_b64encode(signature).decode('utf-8').rstrip('=')
+
+def compute_chain_id(public_key_b64):
+    """Compute chain_id as first 16 hex chars of SHA256(public_key)."""
+    padding = 4 - len(public_key_b64) % 4
+    if padding != 4:
+        public_key_b64 += '=' * padding
+    pub_bytes = base64.urlsafe_b64decode(public_key_b64)
+    
+    h = hashlib.sha256()
+    h.update(pub_bytes)
+    return h.hexdigest()[:16]
+
+def compute_issuer_id(public_key_b64):
+    """Compute issuer_id in did:isnad format."""
+    return f"did:isnad:{public_key_b64}"
+
+def generate_lock(skill_dir='.', compute_attestation=False, sign=True):
     """Generate skill.lock from skill.toml."""
     toml_path = os.path.join(skill_dir, 'skill.toml')
     
@@ -88,16 +166,27 @@ def generate_lock(skill_dir='.', compute_attestation=False):
     
     # Optional attestation section - read from skill.toml or compute
     attestation = skill_data.get('attestation', {})
-    if compute_attestation and attestation:
+    if compute_attestation and attestation and sign and NACL_AVAILABLE:
+        # Generate or load keypair for signing
+        keys = load_or_generate_keypair(skill_dir)
+        
         # Compute scope_hash from content BEFORE attestation block
         content_before_attestation = '\n'.join(lines[:attestation_start_idx])
         scope_hash = compute_scope_hash(content_before_attestation)
         
+        # Sign the scope_hash
+        signature = sign_scope_hash(scope_hash, keys['private'])
+        chain_id = compute_chain_id(keys['public'])
+        issuer_id = compute_issuer_id(keys['public'])
+        
+        # Get subject_id from skill.toml or use issuer_id as default
+        subject_id = attestation.get('subject_id', issuer_id)
+        
         lines.append("[attestation]")
-        lines.append(f'issuer_id = "{attestation.get("issuer_id", "")}"')
-        lines.append(f'subject_id = "{attestation.get("subject_id", "")}"')
-        lines.append(f'signature = "{attestation.get("signature", "")}"')
-        lines.append(f'chain_id = "{attestation.get("chain_id", "")}"')
+        lines.append(f'issuer_id = "{issuer_id}"')
+        lines.append(f'subject_id = "{subject_id}"')
+        lines.append(f'signature = "{signature}"')
+        lines.append(f'chain_id = "{chain_id}"')
         lines.append(f'timestamp = "{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}"')
         lines.append(f'scope_hash = "{scope_hash}"')
         
@@ -202,5 +291,7 @@ if __name__ == '__main__':
     
     if mode == 'verify':
         verify_lock(skill_dir)
+    elif mode == 'attest':
+        generate_lock(skill_dir, compute_attestation=True, sign=True)
     else:
         generate_lock(skill_dir)
