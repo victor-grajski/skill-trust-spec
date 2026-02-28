@@ -1,5 +1,5 @@
 # skill.lock - GENERATED. Do not edit by hand.
-# Generated at 2026-02-25T19:53:50Z
+# Generated at 2026-02-28T07:54:31Z
 
 [manifest]
 name = "weather-check"
@@ -24,7 +24,7 @@ issuer_id = "did:isnad:7Hk2PVLYzQm8NKpLwXqZ..."
 subject_id = "did:isnad:9Xp4RWLZyNk3MLqRsTvw..."
 signature = "base64_ed25519_signature_here"
 chain_id = "isnad-v1:mainnet:a1b2c3d4"
-scope_hash = "93c6243c363c7e09c8f0ff76704ffff70b8c228fb795de53b122b33704c1546a"
+scope_hash = "d6674ed906043e308659d44420040a7f669545f8b9091674e24c73bd5e7bfc4d"
 
 [attestation.metadata]
 trust_score = 0.92
